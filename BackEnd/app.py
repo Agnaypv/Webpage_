@@ -6,7 +6,10 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# ✅ IMPORTANT: absolute paths for Render
+# ✅ allow up to 16 MB uploads (IMPORTANT for Render)
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
+
+# ✅ absolute paths (Render-safe)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DB_PATH = os.path.join(BASE_DIR, "database.db")
@@ -64,30 +67,42 @@ def get_notes():
 # ---------------- UPLOAD NOTE ----------------
 @app.route("/api/upload", methods=["POST"])
 def upload():
-    title = request.form.get("title")
-    subject = request.form.get("subject")
-    file = request.files.get("file")
+    try:
+        print("UPLOAD HIT")
 
-    print("UPLOAD HIT")
+        title = request.form.get("title")
+        subject = request.form.get("subject")
 
-    if not file:
-        return jsonify({"success": False})
+        # ✅ robust file validation
+        if "file" not in request.files:
+            print("No file part")
+            return jsonify({"success": False, "error": "No file part"})
 
-    filepath = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
-    print("Saving to:", filepath)
+        file = request.files["file"]
 
-    file.save(filepath)
+        if file.filename == "":
+            print("Empty filename")
+            return jsonify({"success": False, "error": "Empty filename"})
 
-    con = sqlite3.connect(DB_PATH)
-    cur = con.cursor()
-    cur.execute(
-        "INSERT INTO notes (title, subject, filename) VALUES (?,?,?)",
-        (title, subject, file.filename),
-    )
-    con.commit()
-    con.close()
+        filepath = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
+        print("Saving to:", filepath)
 
-    return jsonify({"success": True})
+        file.save(filepath)
+
+        con = sqlite3.connect(DB_PATH)
+        cur = con.cursor()
+        cur.execute(
+            "INSERT INTO notes (title, subject, filename) VALUES (?,?,?)",
+            (title, subject, file.filename),
+        )
+        con.commit()
+        con.close()
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        print("UPLOAD ERROR:", str(e))
+        return jsonify({"success": False, "error": str(e)})
 
 
 # ---------------- DOWNLOAD ----------------
