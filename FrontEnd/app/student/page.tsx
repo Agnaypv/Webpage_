@@ -32,7 +32,7 @@ export default function StudentDashboard() {
   // ✅ Fetch notes from Flask
   const fetchNotes = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/notes')
+      const res = await fetch('https://webpage-uq00.onrender.com/api/notes')
       const data = await res.json()
       setNotes(data)
     } catch (err) {
@@ -133,7 +133,7 @@ export default function StudentDashboard() {
                 </div>
 
                 <a
-                  href={`http://localhost:5000/api/download/${note.filename}`}
+                  href={`https://webpage-uq00.onrender.com/api/download/${note.filename}`}
                   target="_blank"
                 >
                   <Button>⬇ Download</Button>

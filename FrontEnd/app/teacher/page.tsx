@@ -33,7 +33,7 @@ export default function TeacherDashboard() {
 
   // ✅ Load notes from backend
   const fetchNotes = async () => {
-    const res = await fetch('http://localhost:5000/api/notes')
+    const res = await fetch('https://webpage-uq00.onrender.com/api/notes')
     const data = await res.json()
     setNotes(data)
   }
@@ -59,7 +59,7 @@ export default function TeacherDashboard() {
     formData.append('file', file)
 
     try {
-      const res = await fetch('http://localhost:5000/api/upload', {
+      const res = await fetch('https://webpage-uq00.onrender.com/api/upload', {
         method: 'POST',
         body: formData,
       })
@@ -109,7 +109,7 @@ export default function TeacherDashboard() {
 
   try {
     const res = await fetch(
-      `http://localhost:5000/api/delete/${id}`,
+      `https://webpage-uq00.onrender.com/api/delete/${id}`,
       {
         method: "DELETE",
       }
