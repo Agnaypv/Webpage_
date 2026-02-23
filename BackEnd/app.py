@@ -1,11 +1,19 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-import sqlite3, os
+import sqlite3
+import os
 
 app = Flask(__name__)
 CORS(app)
 
-UPLOAD_FOLDER = "uploads"
+# ✅ IMPORTANT: absolute paths for Render
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+DB_PATH = os.path.join(BASE_DIR, "database.db")
+
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 
@@ -16,7 +24,7 @@ def login():
     username = data.get("username")
     password = data.get("password")
 
-    con = sqlite3.connect("database.db")
+    con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
     cur.execute(
         "SELECT role FROM users WHERE username=? AND password=?",
@@ -34,7 +42,7 @@ def login():
 # ---------------- GET NOTES ----------------
 @app.route("/api/notes", methods=["GET"])
 def get_notes():
-    con = sqlite3.connect("database.db")
+    con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
     cur.execute("SELECT id,title,subject,filename FROM notes")
     rows = cur.fetchall()
@@ -60,13 +68,17 @@ def upload():
     subject = request.form.get("subject")
     file = request.files.get("file")
 
+    print("UPLOAD HIT")
+
     if not file:
         return jsonify({"success": False})
 
     filepath = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
+    print("Saving to:", filepath)
+
     file.save(filepath)
 
-    con = sqlite3.connect("database.db")
+    con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
     cur.execute(
         "INSERT INTO notes (title, subject, filename) VALUES (?,?,?)",
@@ -87,7 +99,7 @@ def download(filename):
 # ---------------- DELETE NOTE ----------------
 @app.route("/api/delete/<int:note_id>", methods=["DELETE"])
 def delete_note(note_id):
-    con = sqlite3.connect("database.db")
+    con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
 
     cur.execute("SELECT filename FROM notes WHERE id=?", (note_id,))
@@ -110,5 +122,7 @@ def delete_note(note_id):
     return jsonify({"success": True})
 
 
+# ✅ Render-safe run
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0")
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
